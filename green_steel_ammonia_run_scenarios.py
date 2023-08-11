@@ -52,30 +52,6 @@ def batch_generator_kernel(arg_list):
     
     from hybrid.sites import flatirons_site as sample_site # For some reason we have to pull this inside the definition
     
-    # # Uncomment and adjust these values if you want to run this script on its own (not as a function)
-    # i = 'option 1'
-    # policy = {'option 1': {'Wind ITC': 0, 'Wind PTC': 0, "H2 PTC": 0}}
-    # atb_year = 2020
-    # site_location = 'Site 2'
-    # electrolysis_scale = 'Centralized'
-    # run_RODeO_selector = True
-    # floris = False
-    # grid_connection_scenario = 'off-grid'
-    # grid_price_scenario = 'retail_peak'
-    # electrolyzer_replacement_scenario = 'Standard'
-    # # Set paths for results, floris and orbit
-    # parent_path = os.path.abspath('')
-    # results_dir = parent_path + '/examples/H2_Analysis/results/'
-    # floris_dir = parent_path + '/floris_input_files/'
-    # path = ('examples/H2_Analysis/green_steel_site_renewable_costs_ATB.xlsx')
-    # rodeo_output_dir = 'examples\\H2_Analysis\\RODeO_files\\Output_test\\'
-    # fin_sum_dir = parent_path + '/examples/H2_Analysis/financial_summary_results/'
-    # save_hybrid_plant_yaml = True # hybrid_plant requires special processing of the SAM objects
-    # save_model_input_yaml = True # saves the inputs for each model/major function
-    # save_model_output_yaml = True # saves the outputs for each model/major function
-    #steel_annual_production_rate_target_tpy = 1278981.78
-
-
     """
     Perform a LCOH analysis for an offshore wind + Hydrogen PEM system
     
@@ -373,26 +349,11 @@ def batch_generator_kernel(arg_list):
         wind_size_mw = n_turbines*turbine_rating
         wind_size_mw = electrolyzer_capacity_EOL_MW
 
-        #wind_size_mw = electrolyzer_capacity_EOL_MW*1.08
-
-        # # End of life required electrolyzer capacity in MW
-        # electrolyzer_capacity_EOL_MW = electricity_production_target_MWhpy/(8760*cf_estimate)
-        # # Electrolyzer hydrogen production rated capacity
-        # hydrogen_production_rated_capacity_kgphr = electrolyzer_capacity_EOL_MW/(electrolyzer_energy_kWh_per_kg_estimate_BOL/1000)
-        # # End-of-life electrolyzer electrical capacity taking into account stack degradation
-        # electrolyzer_capacity_EOL_MW = electrolyzer_capacity_BOL_MW*1.13
-        # # Wind plant size taking into account both electrolyzer and turbine degradation. NOTE: unclear if we should take degradation
-        # # into account here (where it will influence amount of electricity available for hydrogen production)
-        # wind_size_mw = electrolyzer_capacity_BOL_MW
-        # #wind_size_mw = electrolyzer_capacity_EOL_MW*1.08
     else:
         wind_size_mw = nTurbs*turbine_rating
         electrolyzer_capacity_EOL_MW = wind_size_mw
         electrolyzer_capacity_BOL_MW = electrolyzer_capacity_EOL_MW/(1+electrolyzer_degradation_power_increase)
 
-        # if grid_connection_scenario != 'off-grid':
-        #     hydrogen_production_capacity_required_kgphr = hydrogen_production_target_kgpy/(8760)
-        # else:
         hydrogen_production_capacity_required_kgphr = electrolyzer_capacity_BOL_MW*1000/electrolyzer_energy_kWh_per_kg_estimate_BOL
 
 
@@ -619,36 +580,13 @@ def batch_generator_kernel(arg_list):
             else:
                 cf_solar_annuals = np.zeros(30)
             wind_itc_total = hybrid_plant.wind._financial_model.Outputs.itc_total
-            # if floris:
-            # #ACTUAL WIND SIZE
-            #     hopp_dict.main_dict['Configuration']['n_Turbs']=hybrid_plant.wind._system_model.nTurbs
-            #     hopp_dict.main_dict['Configuration']['turb_rating_kw']=hybrid_plant.wind._system_model.turb_rating
-            #     hopp_dict.main_dict['Configuration']['wind_size_mw']=hybrid_plant.wind._system_model.nTurbs*hybrid_plant.wind._system_model.turb_rating*(1/1000)
-            #     wind_size_mw=hybrid_plant.wind._system_model.nTurbs*hybrid_plant.wind._system_model.turb_rating*(1/1000)
-            #     renewable_plant_cost['wind']['size_mw']=wind_size_mw
-            # energy_shortfall_hopp = [x - y for x, y in
-            #                     zip(battery_dispatch_load,combined_pv_wind_power_production_hopp)]
-            # energy_shortfall_hopp = [x if x > 0 else 0 for x in energy_shortfall_hopp]
-            # combined_pv_wind_curtailment_hopp = [x - y for x, y in
-            #                     zip(combined_pv_wind_power_production_hopp,load)]
-            # combined_pv_wind_curtailment_hopp = [x if x > 0 else 0 for x in combined_pv_wind_curtailment_hopp]
-            # combined_pv_wind_curtailment_hopp[0]=0
 
             generation_summary_df = pd.DataFrame({'Generation profile (kW)': hybrid_plant.grid.generation_profile[0:8760] })
         #generation_summary_df.to_csv(os.path.join(results_dir, 'Generation Summary_{}_{}_{}_{}.csv'.format(site_name,atb_year,turbine_model,scenario['Powercurve File'])))
 
 
         #Step 4: Plot HOPP Results
-        # plot_results.plot_HOPP(combined_pv_wind_power_production_hopp,
-        #                         energy_shortfall_hopp,
-        #                         combined_pv_wind_curtailment_hopp,
-        #                         load,
-        #                         results_dir,
-        #                         site_name,
-        #                         atb_year,
-        #                         turbine_model,
-        #                         hybrid_plant,
-        #                         plot_power_production)
+            
 
             #Step 5: Run Simple Dispatch Model
             hopp_dict, combined_pv_wind_storage_power_production_hopp, battery_SOC, battery_used, excess_energy = \
@@ -659,18 +597,7 @@ def batch_generator_kernel(arg_list):
                     combined_pv_wind_power_production_hopp
                 )
 
-            # plot_results.plot_battery_results(
-            #     combined_pv_wind_curtailment_hopp, 
-            #     energy_shortfall_hopp,
-            #     combined_pv_wind_storage_power_production_hopp,
-            #     combined_pv_wind_power_production_hopp,
-            #     battery_SOC,
-            #     battery_used,
-            #     results_dir,
-            #     site_name,atb_year,turbine_model,
-            #     load,
-            #     plot_battery,
-            # )
+   
 
             # grid information
             hopp_dict, cost_to_buy_from_grid, profit_from_selling_to_grid, energy_to_electrolyzer = hopp_tools_steel.grid(
@@ -830,11 +757,6 @@ def batch_generator_kernel(arg_list):
             # electrolyzer_capex_kw,
             # lcoe,
         )
-
-        # h2_hourly_production = H2_Results['hydrogen_hourly_production'].tolist()
-        # fig, ax = plt.subplots(1,1)
-        # ax.plot(h2_hourly_production)
-        # plt.show()
         
 
         #Step 6b: Run desal model
@@ -867,6 +789,11 @@ def batch_generator_kernel(arg_list):
         
         hydrogen_production_storage_system_output_kgprhr,hydrogen_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,hydrogen_storage_cost_USDprkg,storage_status_message\
             = hopp_tools_steel.hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type)   
+        
+
+
+
+
         
         # Apply storage multiplier
         hydrogen_storage_capacity_kg = hydrogen_storage_capacity_kg*storage_capacity_multiplier
@@ -932,6 +859,28 @@ def batch_generator_kernel(arg_list):
         max_hydrogen_delivery_rate_kg_hr  = np.mean(H2_Results['hydrogen_hourly_production'])
         
         electrolyzer_capacity_factor = H2_Results['cap_factor']
+
+
+    # SAVE SOME OUTPUTS FOR ZACK
+
+    # hybrid_plant.generation_profile
+    # combined_pv_wind_curtailment_hopp
+    # combined_pv_wind_power_production_hopp
+    # combined_pv_wind_storage_power_production_hopp
+    # energy_to_electrolyzer
+    # H2_Results
+
+    zct_df = pd.DataFrame({
+        "hybrid_wind_gen": hybrid_plant.generation_profile["wind"][0:8759],
+        "combined_pv_wind_curtailment": combined_pv_wind_curtailment_hopp,
+        "combined_pv_wind_power_production": combined_pv_wind_power_production_hopp,
+        "combined_pv_wind_storage_power_production": combined_pv_wind_storage_power_production_hopp,
+        "energy_to_electrolyzer": energy_to_electrolyzer,
+        "H2_hourly": H2_Results["hydrogen_hourly_production"],
+        "electrolyzer_total_efficiency": H2_Results["electrolyzer_total_efficiency"]
+    })
+
+    zct_df.to_csv(r"C:\Users\ztully\Documents\HFTO_WETO_GreenSteel\HOPP_green_steel\HOPP_scripts\H2_storage_savings\hopp_outputs.csv")
 
     # Calculate hydrogen transmission cost and add to LCOH
     hopp_dict,h2_transmission_economics_from_profast,h2_transmission_economics_summary,h2_transmission_price,h2_transmission_price_breakdown = hopp_tools_steel.levelized_cost_of_h2_transmission(hopp_dict,max_hydrogen_production_rate_kg_hr,
@@ -1108,94 +1057,4 @@ def batch_generator_kernel(arg_list):
                             profast_steel_price_breakdown,
                             profast_ammonia_price_breakdown,
                             hopp_dict) 
-
-    
-    []
-    # lcoh_breakdown.update({'LCOH Final ($/kg)':lcoh})
-    # lcoh_df=pd.Series(lcoh_breakdown)
-    # #saveme_path = parent_path + '/CF_Results_Redo/FixedBatteryCost/'
-    # #saveme_path = parent_path + '/CF_Results_NoDegradation/'
-    # #saveme_path = parent_path + '/CF_Results_WithDeg_NewLCOH/'
-    # saveme_path = parent_path + '/CF_Degradation_03-27/LCOH_80k_SR_NoDeg/'
-    # saveme_name = site_name + '_' + str(atb_year) +  '_Wind{}_Solar{}_Battery_{}MW_{}MWh'.format(1000,solar_size_mw,storage_size_mw,storage_size_mwh)
-    # h2_storage_keys=['H2 Prod kg/hr','Capacity [kg]','Capacity MWh_HHV','Duration [hour]','Cost [$/kg]']
-    # h2_storage_vals=[hydrogen_production_storage_system_output_kgprhr,hydrogen_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,hydrogen_storage_cost_USDprkg]
-    # # plant_df=pd.DataFrame({'Wind + PV':combined_pv_wind_power_production_hopp,'Wind + PV + Battery':combined_pv_wind_storage_power_production_hopp,
-    # # 'H2 Prod':H2_Results['hydrogen_hourly_production'],'Battery Used':battery_used,'Battery SOC':battery_SOC})
-    # h2_storage_df=pd.Series(dict(zip(h2_storage_keys,h2_storage_vals)))
-    # h2_storage_df.to_csv(saveme_path + 'H2_Storage_' + saveme_name + '.csv')
-    # # h2_ts=hopp_dict.main_dict['Models']['run_H2_PEM_sim']['output_dict']['H2_TimeSeries']
-    # # h2_ts=h2_ts.drop('water_hourly_usage_gal',axis=0)
-    # # h2_ts=h2_ts.drop('water_hourly_usage_kg',axis=0)
-    # h2_agg=hopp_dict.main_dict['Models']['run_H2_PEM_sim']['output_dict']['H2_AggData']
-    # h2_agg=h2_agg.drop('IV curve coeff',axis=0)
-
-
-    # h2_agg.to_csv(saveme_path + 'H2_Agg_' + saveme_name + '.csv')
-    # # # plant_df.to_csv(saveme_path + 'Plant_TS_' + saveme_name + '.csv')
-    # # h2_ts.to_csv(saveme_path + 'H2_TS_' + saveme_name + '.csv')
-    # lcoh_df.to_csv(saveme_path + 'LCOH_' + saveme_name + '.csv')
-    
-    
-    
-        # plot_results.donut(steel_price_breakdown,results_dir, 
-        #                     site_name, atb_year, policy_option)
-
-                
-
-                    
-
-                
-
-
-                
-
-        #         #Step 6: Run the H2_PEM model
-        #         h2_model = 'Simple'
-        #         H2_Results, H2A_Results, electrical_generation_timeseries = hopp_tools.run_H2_PEM_sim(hybrid_plant,
-        #                                                                                                 energy_to_electrolyzer,
-        #                                                                                                 scenario,
-        #                                                                                                 wind_size_mw,
-        #                                                                                                 solar_size_mw,
-        #                                                                                                 electrolyzer_size_mw,
-        #                                                                                                 kw_continuous,
-        #                                                                                                 electrolyzer_capex_kw,
-        #                                                                                                 lcoe)
-
-        #         plot_results.plot_h2_results(H2_Results, 
-        #                                     electrical_generation_timeseries,
-        #                                     results_dir,
-        #                                     site_name,atb_year,turbine_model,
-        #                                     load,
-        #                                     plot_h2)
-
-        #         #Step 6b: Run desal model
-        #         desal_capex, desal_opex, desal_annuals = hopp_tools.desal_model(H2_Results, 
-        #                                                         electrolyzer_size_mw, 
-        #                                                         electrical_generation_timeseries, 
-        #                                                         useful_life)
-
-        #         # compressor model
-        #         compressor, compressor_results = hopp_tools.compressor_model()
-
-        #         #Pressure Vessel Model Example
-        #         storage_input, storage_output = hopp_tools.pressure_vessel()
-
-        #         # pipeline model
-        #         total_h2export_system_cost, opex_pipeline, dist_to_port_value = hopp_tools.pipeline(site_df, 
-        #                                                                         H2_Results, 
-        #                                                                         useful_life, 
-        #                                                                         storage_input)
-                
-                
-        #         # plot HVDC vs pipe 
-        #         plot_results.plot_hvdcpipe(total_export_system_cost,
-        #                                     total_h2export_system_cost,
-        #                                     site_name,
-        #                                     atb_year,
-        #                                     dist_to_port_value,
-        #                                     results_dir)
-
-                
-
 

@@ -2442,21 +2442,13 @@ def policy_implementation_for_RODeO(grid_connection_scenario,atb_year,site_name,
 
 def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type):
 
-    hydrogen_average_output_kgprhr = np.mean(H2_Results['hydrogen_hourly_production'])
-    hydrogen_surplus_deficit = H2_Results['hydrogen_hourly_production'] - hydrogen_average_output_kgprhr
+    H2_demand = calc_H2_demand(H2_Results['hydrogen_hourly_production'])
+    H2_storage_capacity_kg, H2_SOC = _calc_H2_storage(H2_Results['hydrogen_hourly_production'], H2_demand)
 
-    hydrogen_storage_soc = []
-    for j in range(len(hydrogen_surplus_deficit)):
-        if j == 0:
-            hydrogen_storage_soc.append(hydrogen_surplus_deficit[j])
-        else:
-            hydrogen_storage_soc.append(hydrogen_storage_soc[j-1]+hydrogen_surplus_deficit[j])
-            
-    hydrogen_storage_capacity_kg = np.max(hydrogen_storage_soc) - np.min(hydrogen_storage_soc)
-    h2_LHV = 119.96
-    h2_HHV = 141.88
-    hydrogen_storage_capacity_MWh_LHV = hydrogen_storage_capacity_kg*h2_LHV/3600
-    hydrogen_storage_capacity_MWh_HHV = hydrogen_storage_capacity_kg*h2_HHV/3600
+    h2_LHV = 119.96 # [GCV - gross calorific value]
+    h2_HHV = 141.88 # [GCV - gross calorific value]
+    hydrogen_storage_capacity_MWh_LHV = H2_storage_capacity_kg*h2_LHV/3600
+    hydrogen_storage_capacity_MWh_HHV = H2_storage_capacity_kg*h2_HHV/3600
     
     # Get average electrolyzer efficiency
     electrolyzer_efficiency_while_running = []
@@ -2466,21 +2458,113 @@ def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage
     electrolyzer_average_efficiency_HHV = np.mean(electrolyzer_efficiency_while_running)
     #electrolyzer_average_efficiency_HHV=H2_Results['electrolyzer_total_efficiency']
     # Calculate storage durationhyd            
-    hydrogen_storage_duration_hr = hydrogen_storage_capacity_MWh_LHV/electrolyzer_size_mw/electrolyzer_average_efficiency_HHV
+    hydrogen_storage_duration_hr = hydrogen_storage_capacity_MWh_LHV/electrolyzer_size_mw/electrolyzer_average_efficiency_HHV # why is storage_capacit_LHV divided by electrolyzer_efficiency_HHV ???
     
     equation_year_CEPCI = 603.1
     model_year_CEPCI = 607.5
     
+    storage_cost_USDprkg, status_message = _calc_H2_storage_cost(H2_storage_capacity_kg, hydrogen_storage_capacity_MWh_HHV, model_year_CEPCI, equation_year_CEPCI, storage_type)
+
+    return(H2_demand,H2_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,storage_cost_USDprkg,status_message)
+    
+    
+def calc_H2_demand(H2_hourly):
+    """
+    This method takes the hydrogen generation profile and calculates a hydrogen demand profile representative of dynamic ammonia or dynamic steel
+    
+    Arguments:
+    H2_hourly: array, hourly hydrogen generation profile
+
+    Returns:
+    H2_demand: array, hourly hydrogen demand profile
+
+    Zachary Tully August 10, 2023
+    """
+    H2_max = np.max(H2_hourly)
+    
+    # year average - assume that the industry must operate at constant level for the whole year
+    H2_demand_static = _calc_H2_demand_static(H2_hourly)
+
+    # dynamic ammonia - assume that the ammonia plant can ramp up or down to follow H2 generation but limited by a ramp rate limit
+    H2_demand_ammonia = _calc_H2_demand_dynamic_ammonia(H2_hourly)
+
+    # dynamic steel - assume that the steel plant can operate at different levels but must have constant input for every 72 hours. In other words the demand is the 72 hour average
+    H2_demand_steel = _calc_H2_demand_dynamic_steel(H2_hourly)
+
+    return H2_demand_static
+
+def _calc_H2_demand_static(H2_hourly):
+    H2_max = np.max(H2_hourly)
+    H2_demand = np.ones(len(H2_hourly)) * np.mean(H2_hourly)
+    # No industry process can operate below 10% of maximum
+    industry_min = 0.1
+    H2_demand = np.array([np.max([industry_min * H2_max, H2d]) for H2d in H2_demand])
+    return H2_demand
+
+def _calc_H2_demand_dynamic_ammonia(H2_hourly):
+    
+    ammonia_ramp_rate = 0.9 # 90% of rated per hour
+    H2_max = np.max(H2_hourly)
+
+    H2_demand = np.zeros(len(H2_hourly))
+    for i in range(len(H2_hourly)):
+        if i == 0:
+            H2_demand[i] = H2_hourly[i]
+        else:
+            if (np.abs(H2_hourly[i] - H2_demand[i - 1]) > ammonia_ramp_rate * H2_max):  # exceeding the ramp limit
+                H2_demand[i] = (H2_demand[i - 1] + np.sign(H2_hourly[i] - H2_demand[i - 1]) * ammonia_ramp_rate * H2_max)
+            else:  # within the ramp limit
+                H2_demand[i] = H2_hourly[i]
+
+    # No industry process can operate below 10% of maximum
+    industry_min = 0.1
+    H2_demand = np.array([np.max([industry_min * H2_max, H2d]) for H2d in H2_demand])
+
+    # State of charge feedback to demand profile. Enforcing ramp limits does not mean the generation and demand profiles will sum to zero at the end of the year. This SOC feedback logic adjusts the demand profile to drive the hydrogen storage SOC to zero when possible.
+    H2_SOC_loop = 0
+
+    for i in range(len(H2_demand)):
+        H2_demand[i] = H2_demand[i] + H2_SOC_loop
+        H2_demand[i] = np.max([H2_demand[i], industry_min * H2_max])
+        H2_demand[i] = np.min([H2_demand[i], H2_max])
+        H2_SOC_loop += H2_hourly[i] - H2_demand[i]
+
+    return H2_demand
+
+def _calc_H2_demand_dynamic_steel(H2_hourly):
+    H2_max = np.max(H2_hourly)
+    H2_demand = np.zeros_like(H2_hourly)
+    for i in np.arange(0, 8760 - 71, 72):
+        H2_demand[i : i + 72] = np.ones(72) * np.mean(H2_hourly[i : i + 72])
+    # No industry process can operate below 10% of maximum
+    industry_min = 0.1
+    H2_demand = np.array([np.max([industry_min * H2_max, H2d]) for H2d in H2_demand])
+    return H2_demand
+
+def _calc_H2_storage(H2_gen, H2_demand):
+    H2_suprlus_deficit = H2_gen - H2_demand
+    H2_SOC = np.zeros(len(H2_gen))
+    H2_SOC_loop = 0
+
+    for i in range(len(H2_gen)):
+        H2_SOC_loop += H2_suprlus_deficit[i]
+        H2_SOC[i] = H2_SOC_loop
+
+    H2_storage_capacity = np.max(H2_SOC) - np.min(H2_SOC)
+
+    return H2_storage_capacity, H2_SOC
+
+def _calc_H2_storage_cost(H2_storage_capacity_kg, hydrogen_storage_capacity_MWh_HHV, model_year_CEPCI, equation_year_CEPCI,storage_type):
     if storage_type == 'Salt cavern' or storage_type == 'salt cavern' or storage_type == 'salt' or storage_type == 'Salt':
         if hydrogen_storage_capacity_MWh_HHV <= 120293:
             base_capacity_MWh_HHV = 120293
             base_cost_USDprkg = 17.04
             scaling_factor = 0.611
             storage_cost_USDprkg = model_year_CEPCI/equation_year_CEPCI*base_capacity_MWh_HHV*base_cost_USDprkg*(hydrogen_storage_capacity_MWh_HHV/base_capacity_MWh_HHV)**scaling_factor/hydrogen_storage_capacity_MWh_HHV
-            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(hydrogen_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
+            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(H2_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
         else:
             storage_cost_USDprkg = model_year_CEPCI/equation_year_CEPCI*17.04
-            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(hydrogen_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
+            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(H2_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
     elif storage_type == 'Lined rock cavern' or storage_type == 'lined rock cavern' or storage_type == 'Lined rock' or storage_type == 'lined rock':
         if hydrogen_storage_capacity_MWh_HHV <= 119251:
             base_capacity_MWh_HHV = 119251
@@ -2490,7 +2574,7 @@ def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage
             status_message = 'Hydrogen storage model complete'
         else:
             storage_cost_USDprkg = model_year_CEPCI/equation_year_CEPCI*42.42
-            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(hydrogen_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
+            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(H2_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
     elif storage_type == 'Buried pipes' or storage_type == 'buried pipes' or storage_type == 'pipes' or storage_type == 'Pipes':
         if hydrogen_storage_capacity_MWh_HHV <= 4085:
             base_capacity_MWh_HHV = 4085
@@ -2500,7 +2584,7 @@ def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage
             status_message = 'Hydrogen storage model complete'
         else:
             storage_cost_USDprkg = model_year_CEPCI/equation_year_CEPCI*521.34
-            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(hydrogen_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
+            status_message = 'Hydrogen storage model complete.\nStorage capacity: ' + str(H2_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
     else:
         if hydrogen_storage_capacity_MWh_HHV <= 4085:
             base_capacity_MWh_HHV = 4085
@@ -2511,10 +2595,8 @@ def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage
         else:
             storage_cost_USDprkg = model_year_CEPCI/equation_year_CEPCI*521.34
             status_message = 'Error: Please enter a valid hydrogen storage type. Otherwise, assuming buried pipe (location agnostic) hydrogen storage.\nStorage capacity: ' \
-                + str(hydrogen_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
+                + str(H2_storage_capacity_kg/1000) + ' metric tonnes. \nStorage cost: ' + str(storage_cost_USDprkg) + ' $/kg'
     if hydrogen_storage_capacity_MWh_HHV==0:
         storage_cost_USDprkg=0
-    return(hydrogen_average_output_kgprhr,hydrogen_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,storage_cost_USDprkg,status_message)
-    
-    
-    
+
+    return storage_cost_USDprkg, status_message
