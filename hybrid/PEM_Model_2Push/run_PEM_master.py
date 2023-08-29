@@ -151,7 +151,7 @@ class run_PEM_clusters:
 
         end = time.perf_counter()
         self.clusters = clusters
-        print("Took {} sec to run the RUN function".format(round(end - start, 3)))
+        # print("Took {} sec to run the RUN function".format(round(end - start, 3)))
         return h2_df_ts, h2_df_tot
         # return h2_dict_ts, h2_df_tot
 
@@ -251,11 +251,11 @@ class run_PEM_clusters:
 
         # power_to_clusters = np.repeat([power_per_cluster],self.num_clusters,axis=0)
         end = time.perf_counter()
-        print(
-            "Took {} sec to run even_split_power function".format(
-                round(end - start, 3)
-            )
-        )
+        # print(
+        #     "Took {} sec to run even_split_power function".format(
+        #         round(end - start, 3)
+        #     )
+        # )
         # rows are power, columns are stacks [300 x n_stacks]
 
         return np.transpose(power_to_clusters)
@@ -284,7 +284,7 @@ class run_PEM_clusters:
                 )
             )
         end = time.perf_counter()
-        print("Took {} sec to run the create clusters".format(round(end - start, 3)))
+        # print("Took {} sec to run the create clusters".format(round(end - start, 3)))
         return stacks
 
 

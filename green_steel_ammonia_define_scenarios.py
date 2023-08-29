@@ -20,7 +20,7 @@ from lcoe.lcoe import lcoe as lcoe_calc
 import matplotlib.pyplot as plt
 import warnings
 from pathlib import Path
-import time
+import time, datetime
 from multiprocessing import Pool
 warnings.filterwarnings("ignore")
 
@@ -35,15 +35,20 @@ import run_profast_for_steel
 from green_steel_ammonia_run_scenarios import batch_generator_kernel
 
 # Establish directories
-parent_path = os.path.abspath('')
+parent_path = os.path.dirname(os.path.abspath(__file__))
 #results_dir = parent_path + '\\examples\\H2_Analysis\\results\\'
-results_dir = parent_path + '/examples/H2_Analysis/results/'
-fin_sum_dir = parent_path + '/examples/H2_Analysis/Phase1B/Fin_summary/'
-energy_profile_dir = parent_path + '/examples/H2_Analysis/Phase1B/Energy_profiles/'
-price_breakdown_dir = parent_path + '/examples/H2_Analysis/Phase1B/ProFAST_price/'
+# results_dir = parent_path + '/examples/H2_Analysis/results/'
+
+# fin_sum_dir = parent_path + '/examples/H2_Analysis/Phase1B/Fin_summary/'
+# energy_profile_dir = parent_path + '/examples/H2_Analysis/Phase1B/Energy_profiles/'
+# price_breakdown_dir = parent_path + '/examples/H2_Analysis/Phase1B/ProFAST_price/'
 floris_dir = parent_path + '/floris_input_files/'
 orbit_path = ('examples/H2_Analysis/OSW_H2_sites_turbines_and_costs.xlsx')
 renewable_cost_path = ('examples/H2_Analysis/green_steel_site_renewable_costs_ATB.xlsx')
+
+
+
+
 floris = False
 
 # Turn to False to run ProFAST for hydrogen LCOH 
@@ -90,7 +95,7 @@ if __name__ == '__main__':
 #-------------------- Define scenarios to run----------------------------------
     
     atb_years = [
-                #2020,
+                # 2020,
                 #2025,
                 2030,
                 #2035
@@ -98,8 +103,8 @@ if __name__ == '__main__':
 
     policy = {
         'no-policy': {'Wind ITC': 0, 'Wind PTC': 0, "H2 PTC": 0, 'Storage ITC': 0},
-        #'base': {'Wind ITC': 0, 'Wind PTC': 0.0051, "H2 PTC": 0.6, 'Storage ITC': 0.06},
-        #'max': {'Wind ITC': 0, 'Wind PTC': 0.03072, "H2 PTC": 3.0, 'Storage ITC': 0.5},   
+        # 'base': {'Wind ITC': 0, 'Wind PTC': 0.0051, "H2 PTC": 0.6, 'Storage ITC': 0.06},
+        # 'max': {'Wind ITC': 0, 'Wind PTC': 0.03072, "H2 PTC": 3.0, 'Storage ITC': 0.5},   
         # 'max on grid hybrid': {'Wind ITC': 0, 'Wind PTC': 0.0051, "H2 PTC": 0.60, 'Storage ITC': 0.06},
         # 'max on grid hybrid': {'Wind ITC': 0, 'Wind PTC': 0.026, "H2 PTC": 0.60, 'Storage ITC': 0.5},
         # 'option 3': {'Wind ITC': 0.06, 'Wind PTC': 0, "H2 PTC": 0.6}, 
@@ -109,49 +114,112 @@ if __name__ == '__main__':
     
     
     site_selection = [
-                    # 'Site 1',
+                    'Site 1',
                     'Site 2',
-                    # 'Site 3',
-                    # 'Site 4',
-                    # 'Site 5'
+                    'Site 3',
+                    'Site 4',
+                    'Site 5'
                     ] 
     
     electrolysis_cases = [
                           'Centralized',
-                          #'Distributed'
+                          'Distributed'
                           ]
     
     grid_connection_cases = [
                             'off-grid',
-                            #'grid-only',
-                            #'hybrid-grid'
+                            # 'grid-only',
+                            # 'hybrid-grid'
                             ]
 
     storage_capacity_cases = [
                             1.0,
-                            #1.25,
-                            #1.5
+                            1.25,
+                            1.5
                             ] 
 
     num_pem_stacks= 6
     run_solar_param_sweep=False
-#---- Create list of arguments to pass to batch generator kernel --------------    
-    arg_list = []
-    for i in policy:
-        for atb_year in atb_years:
-            for site_location in site_selection:
-                for electrolysis_scale in electrolysis_cases:
-                    for grid_connection_scenario in grid_connection_cases:
-                        for storage_capacity_multiplier in storage_capacity_cases:
-                            arg_list.append([policy, i, atb_year, site_location, electrolysis_scale,run_RODeO_selector,floris,\
-                                            grid_connection_scenario,grid_price_scenario,\
-                                            direct_coupling,electrolyzer_cost_case,electrolyzer_degradation_power_increase,wind_plant_degradation_power_decrease,\
-                                                steel_annual_production_rate_target_tpy,parent_path,results_dir,fin_sum_dir,energy_profile_dir,price_breakdown_dir,rodeo_output_dir,floris_dir,renewable_cost_path,\
-                                            save_hybrid_plant_yaml,save_model_input_yaml,save_model_output_yaml,num_pem_stacks,run_solar_param_sweep,electrolyzer_degradation_penalty,\
-                                                pem_control_type,storage_capacity_multiplier])
-    for runs in range(len(arg_list)):
-        batch_generator_kernel(arg_list[runs])
-    []
+#---- Create list of arguments to pass to batch generator kernel --------------    \
+    now = datetime.datetime.now()
+    datestring = '_'.join([str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second)])
+
+    datestring = "".join([now.strftime('%y'), now.strftime('%m'), now.strftime('%d'), now.strftime('%H'), now.strftime('%M'), now.strftime('%S')])
+
+    results_dir = os.path.relpath(r'..\HOPP_scripts\storage\results')
+    results_dir_year_avg = results_dir + r'\st'
+    results_dir_72hr_avg = results_dir + r'\ds'
+    results_dir_ramp_lim = results_dir + r'\da'
+    count = 1
+    for dynamic_case in ["st", "ds", "da"]:
+
+        if dynamic_case == "st":  # static case
+            save_dir = results_dir_year_avg
+        elif dynamic_case == "ds":  # dynamic steel case
+            save_dir = results_dir_72hr_avg
+        elif dynamic_case == "da":  # dynamic ammonia case
+            save_dir = results_dir_ramp_lim
+        
+        fin_sum_dir = save_dir + r"_".join(["\FS", datestring])
+        if not os.path.isdir(fin_sum_dir):
+            os.mkdir(fin_sum_dir)
+
+        energy_profile_dir = save_dir + r"\Energy_Profiles"
+
+        price_breakdown_dir  = save_dir + r"_".join(["\PF_P", datestring])
+        if not os.path.isdir(price_breakdown_dir):
+            os.mkdir(price_breakdown_dir)
+
+
+        arg_list = []
+        for i in policy:
+            for atb_year in atb_years:
+                for site_location in site_selection:
+                    for electrolysis_scale in electrolysis_cases:
+                        for grid_connection_scenario in grid_connection_cases:
+                            for storage_capacity_multiplier in storage_capacity_cases:
+                                arg_list.append([policy,
+                                                i, 
+                                                atb_year, 
+                                                site_location, 
+                                                electrolysis_scale,
+                                                run_RODeO_selector,
+                                                floris,
+                                                grid_connection_scenario,
+                                                grid_price_scenario,
+                                                direct_coupling,
+                                                electrolyzer_cost_case,
+                                                electrolyzer_degradation_power_increase,
+                                                wind_plant_degradation_power_decrease,
+                                                steel_annual_production_rate_target_tpy,
+                                                parent_path,
+                                                results_dir,
+                                                fin_sum_dir,
+                                                energy_profile_dir,
+                                                price_breakdown_dir,
+                                                rodeo_output_dir,
+                                                floris_dir,
+                                                renewable_cost_path,
+                                                save_hybrid_plant_yaml,
+                                                save_model_input_yaml,
+                                                save_model_output_yaml,
+                                                num_pem_stacks,
+                                                run_solar_param_sweep,
+                                                electrolyzer_degradation_penalty,
+                                                pem_control_type,
+                                                storage_capacity_multiplier,
+                                                dynamic_case
+                                                ])
+        
+        for runs in range(len(arg_list)):
+            print("Run ", count, " out of ", len(arg_list)*3, ", started at: ", datetime.datetime.now())
+            count+=1
+            batch_generator_kernel(arg_list[runs])
+            
+       
+
+        
+
 # ------------------ Run HOPP-RODeO/PyFAST Framework to get LCOH ---------------            
     # with Pool(processes=8) as pool:
     #         pool.map(batch_generator_kernel, arg_list)

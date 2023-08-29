@@ -1898,6 +1898,7 @@ def steel_LCOS(
     hopp_dict,
     levelized_cost_hydrogen,
     hydrogen_annual_production,
+    max_hydrogen_delivery_kg_hr,
     steel_annual_production_rate_target_tpy,
     lime_unitcost,
     carbon_unitcost,
@@ -1932,14 +1933,16 @@ def steel_LCOS(
     # Steel production break-even price analysis
 
     # Could connect these to other things in the model
-    steel_capacity_factor = 0.9
+    steel_capacity_factor = np.min([0.9, hydrogen_annual_production / (8760 * max_hydrogen_delivery_kg_hr)])
     steel_plant_life = 30
     
     hydrogen_consumption_for_steel = 0.06596              # metric tonnes of hydrogen/metric tonne of steel production
     # Could be good to make this more conservative, but it is probably fine if demand profile is flat
 
-    max_steel_production_capacity_mtpy = min(steel_annual_production_rate_target_tpy/steel_capacity_factor,hydrogen_annual_production/1000/hydrogen_consumption_for_steel)
+    # max_steel_production_capacity_mtpy = min(steel_annual_production_rate_target_tpy/steel_capacity_factor,hydrogen_annual_production/1000/hydrogen_consumption_for_steel)
     
+    max_steel_production_capacity_mtpy = 8760 * max_hydrogen_delivery_kg_hr / 1000 / hydrogen_consumption_for_steel
+
     # Should connect these to something (AEO, Cambium, etc.)
     natural_gas_cost = 4                        # $/MMBTU
 
@@ -2069,6 +2072,7 @@ def levelized_cost_of_ammonia(
     hopp_dict,
     levelized_cost_hydrogen,
     hydrogen_annual_production,
+    max_hydrogen_delivery_kg_hr,
     ammonia_production_target_kgpy,
     cooling_water_unitcost,
     iron_based_catalyst_unitcost,
@@ -2104,12 +2108,18 @@ def levelized_cost_of_ammonia(
     # Could be good to make this more conservative, but it is probably fine if demand profile is flat
 
     # Could connect these to other things in the model
-    ammonia_capacity_factor = 0.9
+    # ammonia_capacity_factor = np.min([0.9, hydrogen_annual_production / (8760 * max_hydrogen_delivery_kg_hr)])
+    ammonia_capacity_factor = hydrogen_annual_production / (8760 * max_hydrogen_delivery_kg_hr)
     ammonia_plant_life = 30
 
+    # print(ammonia_capacity_factor, ammonia_capacity_factor * (8760 * max_hydrogen_delivery_kg_hr) / hydrogen_consumption_for_ammonia)
+
     #max_ammonia_production_capacity_kgpy = hydrogen_annual_production/hydrogen_consumption_for_ammonia
-    max_ammonia_production_capacity_kgpy = min(ammonia_production_target_kgpy/ammonia_capacity_factor,hydrogen_annual_production/hydrogen_consumption_for_ammonia)
-    
+    # max_ammonia_production_capacity_kgpy = min(ammonia_production_target_kgpy/ammonia_capacity_factor,hydrogen_annual_production/hydrogen_consumption_for_ammonia)
+
+    # max_ammonia_production_capacity_kgpy needs to be based off the maximum hydrogen production maybe
+    max_ammonia_production_capacity_kgpy = 8760 * max_hydrogen_delivery_kg_hr / hydrogen_consumption_for_ammonia
+
 
      # Specify grid cost year for ATB year
     if atb_year == 2020:
@@ -2146,7 +2156,7 @@ def levelized_cost_of_ammonia(
             'ammonia_economics_from_profast': ammonia_economics_from_profast,
             'ammonia_economics_summary': ammonia_economics_summary,
             'ammonia_breakeven_price': ammonia_breakeven_price,
-            'sammonia_annual_capacity': ammonia_annual_capacity,
+            'ammonia_annual_capacity': ammonia_annual_capacity,
             'ammonia_price_breakdown': ammonia_price_breakdown,
             'ammonia_total_capex': ammonia_total_capex
         }
@@ -2440,9 +2450,9 @@ def policy_implementation_for_RODeO(grid_connection_scenario,atb_year,site_name,
     lcoh = lcoh - lcoh_reduction_Ren_PTC - lcoh_reduction_H2_PTC
     return(lcoh,lcoh_reduction_Ren_PTC,lcoh_reduction_H2_PTC)
 
-def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type):
+def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type, dynamic_case):
 
-    H2_demand = calc_H2_demand(H2_Results['hydrogen_hourly_production'])
+    H2_demand = calc_H2_demand(H2_Results['hydrogen_hourly_production'], dynamic_case)
     H2_storage_capacity_kg, H2_SOC = _calc_H2_storage(H2_Results['hydrogen_hourly_production'], H2_demand)
 
     h2_LHV = 119.96 # [GCV - gross calorific value]
@@ -2468,30 +2478,29 @@ def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage
     return(H2_demand,H2_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,storage_cost_USDprkg,status_message)
     
     
-def calc_H2_demand(H2_hourly):
+def calc_H2_demand(H2_hourly, dynamic_case):
     """
     This method takes the hydrogen generation profile and calculates a hydrogen demand profile representative of dynamic ammonia or dynamic steel
     
     Arguments:
     H2_hourly: array, hourly hydrogen generation profile
-
     Returns:
     H2_demand: array, hourly hydrogen demand profile
 
     Zachary Tully August 10, 2023
     """
     H2_max = np.max(H2_hourly)
-    
-    # year average - assume that the industry must operate at constant level for the whole year
-    H2_demand_static = _calc_H2_demand_static(H2_hourly)
+    if dynamic_case == "st":  # static case
+        # year average - assume that the industry must operate at constant level for the whole year
+        H2_demand = _calc_H2_demand_static(H2_hourly)
+    elif dynamic_case == "da": # dynamic ammonia
+        # dynamic ammonia - assume that the ammonia plant can ramp up or down to follow H2 generation but limited by a ramp rate limit
+        H2_demand = _calc_H2_demand_dynamic_ammonia(H2_hourly)
+    elif dynamic_case == "ds": # dynamic steel
+        # dynamic steel - assume that the steel plant can operate at different levels but must have constant input for every 72 hours. In other words the demand is the 72 hour average
+        H2_demand = _calc_H2_demand_dynamic_steel(H2_hourly)
 
-    # dynamic ammonia - assume that the ammonia plant can ramp up or down to follow H2 generation but limited by a ramp rate limit
-    H2_demand_ammonia = _calc_H2_demand_dynamic_ammonia(H2_hourly)
-
-    # dynamic steel - assume that the steel plant can operate at different levels but must have constant input for every 72 hours. In other words the demand is the 72 hour average
-    H2_demand_steel = _calc_H2_demand_dynamic_steel(H2_hourly)
-
-    return H2_demand_static
+    return H2_demand
 
 def _calc_H2_demand_static(H2_hourly):
     H2_max = np.max(H2_hourly)
@@ -2520,7 +2529,10 @@ def _calc_H2_demand_dynamic_ammonia(H2_hourly):
     industry_min = 0.1
     H2_demand = np.array([np.max([industry_min * H2_max, H2d]) for H2d in H2_demand])
 
-    # State of charge feedback to demand profile. Enforcing ramp limits does not mean the generation and demand profiles will sum to zero at the end of the year. This SOC feedback logic adjusts the demand profile to drive the hydrogen storage SOC to zero when possible.
+    # State of charge feedback to demand profile. Enforcing ramp limits does not mean
+    # the generation and demand profiles will sum to zero at the end of the year. This 
+    # SOC feedback logic adjusts the demand profile to drive the hydrogen storage SOC to
+    # zero when possible.
     H2_SOC_loop = 0
 
     for i in range(len(H2_demand)):

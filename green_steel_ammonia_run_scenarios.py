@@ -47,7 +47,7 @@ def batch_generator_kernel(arg_list):
      direct_coupling,electrolyzer_cost_case,electrolyzer_degradation_power_increase,wind_plant_degradation_power_decrease,\
     steel_annual_production_rate_target_tpy,parent_path,results_dir,fin_sum_dir,energy_profile_dir,price_breakdown_dir,rodeo_output_dir,floris_dir,path,\
      save_hybrid_plant_yaml,save_model_input_yaml,save_model_output_yaml,number_pem_stacks,run_pv_battery_sweep,electrolyzer_degradation_penalty,\
-    pem_control_type,storage_capacity_multiplier] = arg_list
+    pem_control_type,storage_capacity_multiplier, dynamic_case] = arg_list
     
     
     from hybrid.sites import flatirons_site as sample_site # For some reason we have to pull this inside the definition
@@ -787,13 +787,16 @@ def batch_generator_kernel(arg_list):
         elif site_location == 'Site 5':
             storage_type = 'Salt cavern' #Unsure
         
-        hydrogen_production_storage_system_output_kgprhr,hydrogen_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,hydrogen_storage_cost_USDprkg,storage_status_message\
-            = hopp_tools_steel.hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type)   
-        
-
-
-
-
+        (hydrogen_production_storage_system_output_kgprhr,
+         hydrogen_storage_capacity_kg,
+         hydrogen_storage_capacity_MWh_HHV,
+         hydrogen_storage_duration_hr,
+         hydrogen_storage_cost_USDprkg,
+         storage_status_message) =\
+            hopp_tools_steel.hydrogen_storage_capacity_cost_calcs(H2_Results,
+                                                                  electrolyzer_size_mw,
+                                                                  storage_type, 
+                                                                  dynamic_case)   
         
         # Apply storage multiplier
         hydrogen_storage_capacity_kg = hydrogen_storage_capacity_kg*storage_capacity_multiplier
@@ -856,31 +859,12 @@ def batch_generator_kernel(arg_list):
 
         # # Max hydrogen production rate [kg/hr]
         max_hydrogen_production_rate_kg_hr = np.max(H2_Results['hydrogen_hourly_production'])
-        max_hydrogen_delivery_rate_kg_hr  = np.mean(H2_Results['hydrogen_hourly_production'])
+        # max_hydrogen_delivery_rate_kg_hr  = np.mean(H2_Results['hydrogen_hourly_production'])
+        max_hydrogen_delivery_rate_kg_hr = np.max(hydrogen_production_storage_system_output_kgprhr)
         
         electrolyzer_capacity_factor = H2_Results['cap_factor']
 
 
-    # SAVE SOME OUTPUTS FOR ZACK
-
-    # hybrid_plant.generation_profile
-    # combined_pv_wind_curtailment_hopp
-    # combined_pv_wind_power_production_hopp
-    # combined_pv_wind_storage_power_production_hopp
-    # energy_to_electrolyzer
-    # H2_Results
-
-    zct_df = pd.DataFrame({
-        "hybrid_wind_gen": hybrid_plant.generation_profile["wind"][0:8759],
-        "combined_pv_wind_curtailment": combined_pv_wind_curtailment_hopp,
-        "combined_pv_wind_power_production": combined_pv_wind_power_production_hopp,
-        "combined_pv_wind_storage_power_production": combined_pv_wind_storage_power_production_hopp,
-        "energy_to_electrolyzer": energy_to_electrolyzer,
-        "H2_hourly": H2_Results["hydrogen_hourly_production"],
-        "electrolyzer_total_efficiency": H2_Results["electrolyzer_total_efficiency"]
-    })
-
-    zct_df.to_csv(r"C:\Users\ztully\Documents\HFTO_WETO_GreenSteel\HOPP_green_steel\HOPP_scripts\H2_storage_savings\hopp_outputs.csv")
 
     # Calculate hydrogen transmission cost and add to LCOH
     hopp_dict,h2_transmission_economics_from_profast,h2_transmission_economics_summary,h2_transmission_price,h2_transmission_price_breakdown = hopp_tools_steel.levelized_cost_of_h2_transmission(hopp_dict,max_hydrogen_production_rate_kg_hr,
@@ -900,31 +884,72 @@ def batch_generator_kernel(arg_list):
     carbon_unit_cost = site_df['Carbon ($/metric tonne)'] + site_df['Carbon Transport ($/metric tonne)']
     iron_ore_pellets_unit_cost = site_df['Iron Ore Pellets ($/metric tonne)'] + site_df['Iron Ore Pellets Transport ($/metric tonne)']
     o2_heat_integration = 0
-    hopp_dict,steel_economics_from_profast, steel_economics_summary, profast_steel_price_breakdown,steel_breakeven_price, steel_annual_production_mtpy,steel_production_capacity_margin_pc,steel_price_breakdown = hopp_tools_steel.steel_LCOS(hopp_dict,lcoh,hydrogen_annual_production,steel_annual_production_rate_target_tpy,
-                                                                                                            lime_unit_cost,
-                                                                                                            carbon_unit_cost,
-                                                                                                            iron_ore_pellets_unit_cost,
-                                                                                                            o2_heat_integration,atb_year,site_name)
+    (hopp_dict,
+     steel_economics_from_profast, 
+     steel_economics_summary, 
+     profast_steel_price_breakdown,
+     steel_breakeven_price, 
+     steel_annual_production_mtpy,
+     steel_production_capacity_margin_pc,
+     steel_price_breakdown) =\
+        hopp_tools_steel.steel_LCOS(hopp_dict,
+                                    lcoh,
+                                    hydrogen_annual_production,
+                                    max_hydrogen_delivery_rate_kg_hr,
+                                    steel_annual_production_rate_target_tpy,
+                                    lime_unit_cost,
+                                    carbon_unit_cost,
+                                    iron_ore_pellets_unit_cost,
+                                    o2_heat_integration,
+                                    atb_year,
+                                    site_name)
     
     
     # Calcualte break-even price of steel WITH oxygen and heat integration
     o2_heat_integration = 1
-    hopp_dict,steel_economics_from_profast_integration, steel_economics_summary_integration, profast_steel_price_breakdown_integration,steel_breakeven_price_integration, steel_annual_production_mtpy_integration,steel_production_capacity_margin_pc_integration,steel_price_breakdown_integration = hopp_tools_steel.steel_LCOS(hopp_dict,lcoh,hydrogen_annual_production,steel_annual_production_rate_target_tpy,
-                                                                                                            lime_unit_cost,
-                                                                                                            carbon_unit_cost,
-                                                                                                            iron_ore_pellets_unit_cost,
-                                                                                                            o2_heat_integration,atb_year,site_name)
+    (hopp_dict,
+     steel_economics_from_profast_integration, 
+     steel_economics_summary_integration, 
+     profast_steel_price_breakdown_integration,
+     steel_breakeven_price_integration, 
+     steel_annual_production_mtpy_integration,
+     steel_production_capacity_margin_pc_integration,
+     steel_price_breakdown_integration) =\
+        hopp_tools_steel.steel_LCOS(hopp_dict,
+                                    lcoh,
+                                    hydrogen_annual_production,
+                                    max_hydrogen_delivery_rate_kg_hr,
+                                    steel_annual_production_rate_target_tpy,
+                                    lime_unit_cost,
+                                    carbon_unit_cost,
+                                    iron_ore_pellets_unit_cost,
+                                    o2_heat_integration,
+                                    atb_year,
+                                    site_name)
     
     
     # Calculate break-even price of ammonia
     cooling_water_cost = 0.000113349938601175 # $/Gal
     iron_based_catalyst_cost = 23.19977341 # $/kg
     oxygen_cost = 0.0285210891617726       # $/kg 
-    hopp_dict,ammonia_economics_from_profast, ammonia_economics_summary, profast_ammonia_price_breakdown,ammonia_breakeven_price, ammonia_annual_production_kgpy,ammonia_production_capacity_margin_pc,ammonia_price_breakdown = hopp_tools_steel.levelized_cost_of_ammonia(hopp_dict,lcoh,hydrogen_annual_production,ammonia_production_target_kgpy,
-                                                                                                            cooling_water_cost,
-                                                                                                            iron_based_catalyst_cost,
-                                                                                                            oxygen_cost, 
-                                                                                                            atb_year,site_name)
+    (hopp_dict,
+     ammonia_economics_from_profast,
+     ammonia_economics_summary, 
+     profast_ammonia_price_breakdown,
+     ammonia_breakeven_price, 
+     ammonia_annual_production_kgpy,
+     ammonia_production_capacity_margin_pc,
+     ammonia_price_breakdown) =\
+        hopp_tools_steel.levelized_cost_of_ammonia(hopp_dict,
+                                                   lcoh,
+                                                   hydrogen_annual_production, 
+                                                   max_hydrogen_delivery_rate_kg_hr, 
+                                                   ammonia_production_target_kgpy,
+                                                   cooling_water_cost,
+                                                   iron_based_catalyst_cost,
+                                                   oxygen_cost, 
+                                                   atb_year,
+                                                   site_name)
             
     # Step 7: Write outputs to file
     
@@ -932,7 +957,6 @@ def batch_generator_kernel(arg_list):
     opex_pipeline=0
     total_export_system_cost=0
     total_export_om_cost=0
-    
     if run_RODeO_selector == True:             
         policy_option,turbine_model,scenario['Useful Life'], wind_cost_kw, solar_cost_kw,\
         scenario['Debt Equity'], atb_year, scenario['H2 PTC'],scenario['Wind ITC'],\
@@ -1058,3 +1082,6 @@ def batch_generator_kernel(arg_list):
                             profast_ammonia_price_breakdown,
                             hopp_dict) 
 
+        print("ammonia price: ", ammonia_price_breakdown["Ammonia price: Total ($/kg)"], " steel price: ", steel_price_breakdown["Steel price: Total ($/tonne)"])
+
+    []

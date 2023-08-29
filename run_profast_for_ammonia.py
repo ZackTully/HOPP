@@ -114,6 +114,9 @@ def run_profast_for_ammonia(plant_capacity_kgpy,plant_capacity_factor,plant_life
     pf.set_params('debt interest rate',0.0489)
     pf.set_params('cash onhand percent',1)
     
+
+    print(plant_capacity_factor * plant_capacity_kgpy)
+
     #----------------------------------- Add capital items to ProFAST ----------------
     pf.add_capital_item(name="Air Separation by Cryogenic",cost=capex_air_separation_crygenic,depr_type="MACRS",depr_period=7,refurb=[0])
     pf.add_capital_item(name="Haber Bosch",cost=capex_haber_bosch,depr_type="MACRS",depr_period=7,refurb=[0])
