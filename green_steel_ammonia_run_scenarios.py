@@ -42,14 +42,39 @@ from green_steel_ammonia_solar_parametric_sweep import solar_storage_param_sweep
 def batch_generator_kernel(arg_list):
 
     # Read in arguments
-    [policy, i, atb_year, site_location, electrolysis_scale,run_RODeO_selector,floris,\
-     grid_connection_scenario,grid_price_scenario,\
-     direct_coupling,electrolyzer_cost_case,electrolyzer_degradation_power_increase,wind_plant_degradation_power_decrease,\
-    steel_annual_production_rate_target_tpy,parent_path,results_dir,fin_sum_dir,energy_profile_dir,price_breakdown_dir,rodeo_output_dir,floris_dir,path,\
-     save_hybrid_plant_yaml,save_model_input_yaml,save_model_output_yaml,number_pem_stacks,run_pv_battery_sweep,electrolyzer_degradation_penalty,\
-    pem_control_type,storage_capacity_multiplier, dynamic_case] = arg_list
+    [policy, 
+     i, 
+     atb_year, 
+     site_location, 
+     electrolysis_scale,
+     run_RODeO_selector,
+     floris,
+     grid_connection_scenario,
+     grid_price_scenario,
+     direct_coupling,
+     electrolyzer_cost_case,
+     electrolyzer_degradation_power_increase,
+     wind_plant_degradation_power_decrease,
+     steel_annual_production_rate_target_tpy,
+     parent_path,
+     results_dir,
+     fin_sum_dir,
+     energy_profile_dir,
+     price_breakdown_dir,
+     rodeo_output_dir,
+     floris_dir,path,
+     save_hybrid_plant_yaml,
+     save_model_input_yaml,
+     save_model_output_yaml,
+     number_pem_stacks,
+     run_pv_battery_sweep,
+     electrolyzer_degradation_penalty,
+     pem_control_type,
+     storage_capacity_multiplier, 
+     dynamic_case
+    ] = arg_list
     
-    
+
     from hybrid.sites import flatirons_site as sample_site # For some reason we have to pull this inside the definition
     
     """
@@ -105,14 +130,6 @@ def batch_generator_kernel(arg_list):
     #interconnection_size_mw = wind_size_mw
     #electrolyzer_size_mw = wind_size_mw
     
-
- 
-    #solar and battery size list will be used in param sweep if
-    #param swee is true
-    ##Solar and Battery Parametric Sweep Inputs
-    #solar_sizes_mw=[750]
-    #storage_sizes_mw=[0]
-    #storage_sizes_mwh = [0]
     if grid_connection_scenario == 'off-grid':
         solar_sizes_mw=[0,100,250,500,750]
         storage_sizes_mw=[0,100,100,200]
@@ -168,12 +185,9 @@ def batch_generator_kernel(arg_list):
     storage_om_percent = 0.025 #percent of capex
     renewable_plant_cost = {}
 
-    
-
     # Flags (TODO: remove them and update documentation)
     forced_sizes = True
     force_electrolyzer_cost = False
-    
     
     # Enable Ability to purchase/sell electricity to/from grid. Price Defined in $/kWh
     if grid_connection_scenario != "off-grid":
@@ -182,9 +196,7 @@ def batch_generator_kernel(arg_list):
     else:
         sell_price = False
         buy_price = False
-        
-    #print('Parent path = ', parent_path)
-    
+            
     # Site specific turbine information
     xl = pd.ExcelFile(path)
     
@@ -293,7 +305,7 @@ def batch_generator_kernel(arg_list):
     hopp_dict, scenario, nTurbs, floris_config = hopp_tools_steel.set_turbine_model(hopp_dict, turbine_model, scenario, parent_path,floris_dir, floris,site_location,grid_connection_scenario)
 
 
-# Establish wind farm and electrolyzer sizing
+    # Establish wind farm and electrolyzer sizing
 
     # Calculate target hydrogen and electricity demand
     hydrogen_consumption_for_steel = 0.06596 # metric tonnes of hydrogen/metric tonne of steel production
@@ -370,16 +382,6 @@ def batch_generator_kernel(arg_list):
     elif electrolysis_scale == 'Centralized':
         n_pem_clusters = n_pem_clusters_max
 
-
-
-        # if grid_connection_scenario == 'off-grid':
-            
-
-        #     cluster_size_mw = np.ceil(electrolyzer_size_mw/number_pem_stacks/cluster_cap_mw)*cluster_cap_mw
-        #     n_pem_clusters = int(electrolyzer_size_mw/cluster_size_mw)
-        # else:
-        #     n_pem_clusters = number_pem_stacks
-
     kw_continuous = electrolyzer_size_mw * 1000
     load = [kw_continuous for x in
             range(0, 8760)]  # * (sin(x) + pi) Set desired/required load profile for plant
@@ -439,23 +441,74 @@ def batch_generator_kernel(arg_list):
     if grid_connection_scenario !='grid-only':
         if run_pv_battery_sweep:
             
-            inputs_for_sweep=[atb_year,policy_option,hopp_dict,\
-            electrolysis_scale,scenario,parent_path,results_dir,\
-            grid_connected_hopp,grid_connection_scenario,grid_price_scenario,\
-            site_df,sample_site,site,site_location,\
-            turbine_model,wind_size_mw,nTurbs,floris_config,floris,\
-            sell_price,buy_price,discount_rate,debt_equity_split,\
-            electrolyzer_size_mw,n_pem_clusters,pem_control_type,\
-            electrolyzer_capex_kw,electrolyzer_component_costs_kw,wind_plant_degradation_power_decrease,electrolyzer_energy_kWh_per_kg,time_between_replacement,\
-            user_defined_stack_replacement_time,use_optimistic_pem_efficiency,electrolyzer_degradation_penalty,storage_capacity_multiplier,hydrogen_production_capacity_required_kgphr,\
-            electrolyzer_model_parameters]
+            inputs_for_sweep=[atb_year,
+                              policy_option,
+                              hopp_dict,
+                              electrolysis_scale,
+                              scenario,
+                              parent_path,
+                              results_dir,
+                              grid_connected_hopp,
+                              grid_connection_scenario,
+                              grid_price_scenario,
+                              site_df,
+                              sample_site,
+                              site,
+                              site_location,
+                              turbine_model,
+                              wind_size_mw,
+                              nTurbs,
+                              floris_config,
+                              floris,
+                              sell_price,
+                              buy_price,
+                              discount_rate,
+                              debt_equity_split,
+                              electrolyzer_size_mw,
+                              n_pem_clusters,
+                              pem_control_type,
+                              electrolyzer_capex_kw,
+                              electrolyzer_component_costs_kw,
+                              wind_plant_degradation_power_decrease,
+                              electrolyzer_energy_kWh_per_kg,
+                              time_between_replacement,
+                              user_defined_stack_replacement_time,
+                              use_optimistic_pem_efficiency,
+                              electrolyzer_degradation_penalty,
+                              storage_capacity_multiplier,
+                              hydrogen_production_capacity_required_kgphr,
+                              electrolyzer_model_parameters
+                            ]
             #if solar and battery size lists are set to 'None' then defaults will be used
             #
-            lcoh,hopp_dict,best_result_data,param_sweep_tracker,combined_pv_wind_power_production_hopp,combined_pv_wind_storage_power_production_hopp,\
-            combined_pv_wind_curtailment_hopp,energy_shortfall_hopp,energy_to_electrolyzer,hybrid_plant,solar_size_mw,\
-            storage_size_mw,storage_size_mwh,renewable_plant_cost,lcoe,cost_to_buy_from_grid, profit_from_selling_to_grid,\
-            cf_wind_annuals,cf_solar_annuals,wind_itc_total=solar_storage_param_sweep(inputs_for_sweep,save_param_sweep_best_case,save_param_sweep_general_info,solar_sizes_mw,storage_sizes_mw,storage_sizes_mwh)
-            []
+            lcoh,\
+            hopp_dict,\
+            best_result_data,\
+            param_sweep_tracker,\
+            combined_pv_wind_power_production_hopp,\
+            combined_pv_wind_storage_power_production_hopp,\
+            combined_pv_wind_curtailment_hopp,\
+            energy_shortfall_hopp,\
+            energy_to_electrolyzer,\
+            hopp_dictsolar_size_mw,\
+            storage_size_mw,\
+            storage_size_mwh,\
+            renewable_plant_cost,\
+            lcoe,\
+            cost_to_buy_from_grid,\
+            profit_from_selling_to_grid,\
+            cf_wind_annuals,\
+            cf_solar_annuals,\
+            wind_itc_total = solar_storage_param_sweep(
+                inputs_for_sweep,
+                save_param_sweep_best_case,
+                save_param_sweep_general_info,
+                dynamic_case,
+                solar_sizes_mw,
+                storage_sizes_mw,
+                storage_sizes_mwh
+                )
+            
 
             # Might not need everything below
             capex_multiplier = site_df['CapEx Multiplier']
@@ -545,9 +598,6 @@ def batch_generator_kernel(arg_list):
                 hopp_dict.main_dict['Configuration']['battery_cost_kw']=storage_cost_kw
                 hopp_dict.main_dict['Configuration']['battery_cost_kwh']=storage_cost_kwh
             
-            # ## skip running renewables if grid-only
-            #if True: #grid_connection_scenario != 'grid-only':
-                # Run HOPP
             hopp_dict, combined_pv_wind_power_production_hopp, energy_shortfall_hopp, combined_pv_wind_curtailment_hopp, hybrid_plant, wind_size_mw, solar_size_mw, lcoe = \
                 hopp_tools_steel.run_HOPP(
                             hopp_dict,
@@ -609,7 +659,7 @@ def batch_generator_kernel(arg_list):
                 kw_continuous,
                 plot_grid,
             )
-
+        print("wind size ", wind_size_mw, " solar size", solar_size_mw)
     # else:
     elif grid_connection_scenario == 'grid-only':
 

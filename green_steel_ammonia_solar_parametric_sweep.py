@@ -38,7 +38,7 @@ import LCA_single_scenario
 import LCA_single_scenario_ProFAST
 #from hybrid.PEM_Model_2Push import run_PEM_master
 
-def solar_storage_param_sweep(arg_list,save_best_solar_case_pickle,save_param_sweep_summary,solar_test_sizes_mw=None,battery_sizes_mw=None,battery_sizes_mwh=None):
+def solar_storage_param_sweep(arg_list,save_best_solar_case_pickle,save_param_sweep_summary,dynamic_case,solar_test_sizes_mw=None,battery_sizes_mw=None,battery_sizes_mwh=None):
 
     # Read in arguments
     # [policy, i, atb_year, site_location, electrolysis_scale,run_RODeO_selector,floris,\
@@ -138,7 +138,6 @@ def solar_storage_param_sweep(arg_list,save_best_solar_case_pickle,save_param_sw
 
     site_name = site_df['State']
     
-
     total_capex = site_df['{} CapEx'.format(atb_year)]
     wind_om_cost_kw = site_df['{} OpEx ($/kw-yr)'.format(atb_year)]*(1+wind_plant_degradation_power_decrease)
     capex_multiplier = site_df['CapEx Multiplier']
@@ -221,7 +220,6 @@ def solar_storage_param_sweep(arg_list,save_best_solar_case_pickle,save_param_sw
             'size_mwh':storage_size_mwh,
             'storage_hours':storage_hours}
             
-
             # Run HOPP
             hopp_dict, plant_power_production, plant_shortfall_hopp, plant_curtailment_hopp, hybrid_plant, wind_size_mw, solar_size_mw, lcoe = \
                 hopp_tools_steel.run_HOPP(
@@ -409,7 +407,7 @@ def solar_storage_param_sweep(arg_list,save_best_solar_case_pickle,save_param_sw
                 storage_type = 'Salt cavern' #Unsure
             
             hydrogen_production_storage_system_output_kgprhr,hydrogen_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,hydrogen_storage_cost_USDprkg,storage_status_message\
-                = hopp_tools_steel.hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type)   
+                = hopp_tools_steel.hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage_type,dynamic_case)   
            
             # Apply storage multiplier
             hydrogen_storage_capacity_kg = hydrogen_storage_capacity_kg*storage_capacity_multiplier

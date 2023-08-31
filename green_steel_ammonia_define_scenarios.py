@@ -115,15 +115,15 @@ if __name__ == '__main__':
     
     site_selection = [
                     'Site 1',
-                    'Site 2',
-                    'Site 3',
-                    'Site 4',
-                    'Site 5'
+                    # 'Site 2',
+                    # 'Site 3',
+                    # 'Site 4',
+                    # 'Site 5'
                     ] 
     
     electrolysis_cases = [
                           'Centralized',
-                          'Distributed'
+                        #   'Distributed'
                           ]
     
     grid_connection_cases = [
@@ -134,12 +134,12 @@ if __name__ == '__main__':
 
     storage_capacity_cases = [
                             1.0,
-                            1.25,
-                            1.5
+                            # 1.25,
+                            # 1.5
                             ] 
 
     num_pem_stacks= 6
-    run_solar_param_sweep=False
+    run_solar_param_sweep=True
 #---- Create list of arguments to pass to batch generator kernel --------------    \
     now = datetime.datetime.now()
     datestring = '_'.join([str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second)])

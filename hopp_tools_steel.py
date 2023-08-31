@@ -28,8 +28,6 @@ from datetime import datetime
 
 import LCA_single_scenario
 
-
-
 def todict(obj, classkey=None):
     if isinstance(obj, dict):
         data = {}
@@ -124,7 +122,6 @@ def set_site_info(hopp_dict, site_df, sample_site):
     hopp_dict.add('Configuration', {'sample_site': sample_site})
 
     return hopp_dict, site_df, sample_site
-
 
 def set_financial_info(
     hopp_dict,
@@ -446,7 +443,6 @@ def set_turbine_financials(turbine_model,
         print("wind om cost ORBIT:",wind_om_cost_kw)
 
     return new_wind_cost_kw, new_wind_om_cost_kw, new_wind_net_cf
-
 
 def set_policy_values(hopp_dict, scenario, policy, option):
 
@@ -1893,7 +1889,6 @@ def write_outputs_ProFAST_SMR(fin_sum_dir,
 
     return (atb_year,site_name)
 
-
 def steel_LCOS(
     hopp_dict,
     levelized_cost_hydrogen,
@@ -2232,7 +2227,6 @@ def levelized_cost_of_ammonia_SMR(
 
     return ammonia_economics_from_profast, ammonia_economics_summary, profast_ammonia_price_breakdown,ammonia_breakeven_price, ammonia_annual_capacity, ammonia_price_breakdown,ammonia_plant_capex
 
-
 def levelized_cost_of_h2_transmission(
     hopp_dict,
     max_hydrogen_production_rate_kg_hr,
@@ -2476,8 +2470,7 @@ def hydrogen_storage_capacity_cost_calcs(H2_Results,electrolyzer_size_mw,storage
     storage_cost_USDprkg, status_message = _calc_H2_storage_cost(H2_storage_capacity_kg, hydrogen_storage_capacity_MWh_HHV, model_year_CEPCI, equation_year_CEPCI, storage_type)
 
     return(H2_demand,H2_storage_capacity_kg,hydrogen_storage_capacity_MWh_HHV,hydrogen_storage_duration_hr,storage_cost_USDprkg,status_message)
-    
-    
+ 
 def calc_H2_demand(H2_hourly, dynamic_case):
     """
     This method takes the hydrogen generation profile and calculates a hydrogen demand profile representative of dynamic ammonia or dynamic steel
