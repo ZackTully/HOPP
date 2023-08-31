@@ -139,7 +139,7 @@ if __name__ == '__main__':
                             ] 
 
     num_pem_stacks= 6
-    run_solar_param_sweep=True
+    run_solar_param_sweep=False
 #---- Create list of arguments to pass to batch generator kernel --------------    \
     now = datetime.datetime.now()
     datestring = '_'.join([str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second)])
