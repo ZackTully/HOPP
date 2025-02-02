@@ -3,10 +3,12 @@ import numpy as np
 from hopp.simulation.technologies.dispatch.power_storage import (
     OneCycleBatteryDispatchHeuristic,
     SimpleBatteryDispatchHeuristic,
+    SimpleBatteryDispatchHeuristicZCT,
     SimpleBatteryDispatch,
     NonConvexLinearVoltageBatteryDispatch,
     ConvexLinearVoltageBatteryDispatch,
     HeuristicLoadFollowingDispatch,
+    HeuristicLoadFollowingDispatchZCT
 )
 
 
@@ -126,10 +128,12 @@ class HybridDispatchOptions:
         self._battery_dispatch_model_options = {
             "one_cycle_heuristic": OneCycleBatteryDispatchHeuristic,
             "heuristic": SimpleBatteryDispatchHeuristic,
+            "heuristic_zct": SimpleBatteryDispatchHeuristicZCT,
             "simple": SimpleBatteryDispatch,
             "non_convex_LV": NonConvexLinearVoltageBatteryDispatch,
             "convex_LV": ConvexLinearVoltageBatteryDispatch,
             "load_following_heuristic": HeuristicLoadFollowingDispatch,
+            "load_following_heuristic_zct": HeuristicLoadFollowingDispatchZCT,
         }
         if self.battery_dispatch in self._battery_dispatch_model_options:
             self.battery_dispatch_class = self._battery_dispatch_model_options[

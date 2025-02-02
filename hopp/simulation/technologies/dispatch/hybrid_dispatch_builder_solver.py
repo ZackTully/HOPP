@@ -456,6 +456,9 @@ class HybridDispatchBuilderSolver:
             for index in block_object.index_set():
                 block_object[index].display()
 
+
+    # ZCT - add option to replace simulate power with GH_dispatch here
+            
     def simulate_power(self):
         if self.needs_dispatch:
             # Dispatch Optimization Simulation with Rolling Horizon
@@ -465,6 +468,11 @@ class HybridDispatchBuilderSolver:
             return
         ti = list(range(0, self.site.n_timesteps, self.options.n_roll_periods))
         self.dispatch.initialize_parameters()
+
+        if hasattr(self, "dispatcher"):
+            pass
+            # self.dispatcher.step()
+    
 
         if self.clustering is None:
             # Solving the year in series
@@ -642,9 +650,13 @@ class HybridDispatchBuilderSolver:
                 )
 
             if "heuristic" in self.options.battery_dispatch:
-                # TODO: this is not a good way to do this... This won't work with CSP addition...
-                self.battery_heuristic()
-                # TODO: we could just run the csp model without dispatch here
+                if "zct" in  self.options.battery_dispatch:
+                    self.battery_heuristic_zct(start_time)
+                else:
+
+                    # TODO: this is not a good way to do this... This won't work with CSP addition...
+                    self.battery_heuristic()
+                    # TODO: we could just run the csp model without dispatch here
             else:
                 self.solve_dispatch_model(start_time, n_days)
 
@@ -716,6 +728,51 @@ class HybridDispatchBuilderSolver:
                 tot_gen, grid_limit
             )
 
+    def battery_heuristic_zct(self, start_time=None):
+        tot_gen = np.zeros(self.options.n_look_ahead_periods)
+
+        # get the available power from the non-dispatchable power sources (pv and wind)
+        for power_source in self.power_sources.keys():
+            if "battery" in power_source or "grid" in power_source:
+                continue
+            
+            tot_gen += self.power_sources[power_source].dispatch.available_generation
+
+        tot_gen = tot_gen.tolist()
+        
+        # get the grid limit (maximum the plant can output)
+        grid_limit = self.power_sources["grid"].dispatch.generation_transmission_limit
+
+        if "one_cycle" in self.options.battery_dispatch:
+            # Get prices for one cycle heuristic
+            prices = self.power_sources["grid"].dispatch.electricity_sell_price
+            self.power_sources["battery"].dispatch.prices = prices
+
+        if "load_following" in self.options.battery_dispatch:
+            # TODO: Look into how to define a system as load following or not in the config file
+            required_keys = ["desired_load"]
+            if self.site.follow_desired_schedule:
+                # Get difference between baseload demand and power generation and control scenario variables
+                load_value = self.site.desired_schedule
+                load_difference = [
+                    (load_value[x] - tot_gen[x]) for x in range(len(tot_gen))
+                ]
+                self.power_sources["battery"].dispatch.load_difference = load_difference
+            else:
+                raise ValueError(
+                    type(self).__name__ + " requires the following : desired_schedule"
+                )
+            # Adding goal_power for the simple battery heuristic method for power setpoint tracking
+            goal_power = [load_value] * self.options.n_look_ahead_periods
+            ### Note: the inputs grid_limit and goal_power are in MW ###
+            self.power_sources["battery"].dispatch.set_fixed_dispatch(
+                tot_gen, grid_limit, load_value, start_time
+            )
+        else:
+            self.power_sources["battery"].dispatch.set_fixed_dispatch(
+                tot_gen, grid_limit
+            )
+    
     @property
     def pyomo_model(self) -> pyomo.ConcreteModel:
         return self._pyomo_model

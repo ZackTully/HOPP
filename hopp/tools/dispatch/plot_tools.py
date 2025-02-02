@@ -165,7 +165,7 @@ def plot_battery_dispatch_error(hybrid: HybridSimulation,
 
     plt.subplot(n_rows, n_cols, sub_plot)
     dispatch_P_discharge = [(p > 0) * p for p in dispatch_P_MW]
-    dispatch_P_charge = [-(p < 0) * p for p in dispatch_P_MW]
+    dispatch_P_charge = [~(p < 0) * p for p in dispatch_P_MW]
     P_discharge = [(p > 0) * p for p in P_MW]
     P_charge = [-(p < 0) * p for p in P_MW]
 

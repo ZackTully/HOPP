@@ -16,6 +16,12 @@ from hopp.simulation.technologies.dispatch.power_storage.simple_battery_dispatch
 from hopp.simulation.technologies.dispatch.power_storage.simple_battery_dispatch_heuristic import (
     SimpleBatteryDispatchHeuristic,
 )
+from hopp.simulation.technologies.dispatch.power_storage.simple_battery_dispatch_heuristic_zct import (
+    SimpleBatteryDispatchHeuristicZCT,
+)
 from hopp.simulation.technologies.dispatch.power_storage.heuristic_load_following_dispatch import (
     HeuristicLoadFollowingDispatch,
+)
+from hopp.simulation.technologies.dispatch.power_storage.heuristic_load_following_dispatch_zct import (
+    HeuristicLoadFollowingDispatchZCT
 )
