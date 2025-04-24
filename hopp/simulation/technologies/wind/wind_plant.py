@@ -95,7 +95,7 @@ class WindPlant(PowerSource):
             financial_model = self.config.fin_model
 
         if self.config.model_name == 'floris':
-            print('FLORIS is the system model...')
+            # print('FLORIS is the system model...')
             system_model = Floris(self.site, self.config)
 
             if financial_model is None:

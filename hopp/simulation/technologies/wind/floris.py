@@ -120,7 +120,6 @@ class Floris(BaseClass):
 
     def execute(self, project_life):
 
-        print('Simulating wind farm output in FLORIS...')
 
         # find generation of wind farm
         power_turbines = np.zeros((self.nTurbs, 8760))
@@ -132,20 +131,43 @@ class Floris(BaseClass):
             turbulence_intensities=self.fi.core.flow_field.turbulence_intensities[0]
         )
 
-        self.fi.set(wind_data=time_series)
-        self.fi.run()
 
-        power_turbines[:, self.start_idx:self.end_idx] = self.fi.get_turbine_powers().reshape((self.nTurbs, self.end_idx - self.start_idx))
-        power_farm[self.start_idx:self.end_idx] = self.fi.get_farm_power().reshape((self.end_idx - self.start_idx))
+        if False: 
+            # print("Loading FLORIS data Zack's sloppy speedup hack")
+            from pathlib import Path
 
-        # Adding losses from PySAM defaults (excluding turbine and wake losses)
-        self.gen = power_farm * ((100 - self._operational_losses)/100) / 1000 # kW
+            data_path = Path("/Users/ztully/Documents/hybrids_code/GH_scripts/greenheart_scripts/minnesota_reference_design/01-minnesota-steel/greenHEART/input-files/weather/floris_data")
 
-        self.annual_energy = np.sum(self.gen) # kWh
-        self.capacity_factor = np.sum(self.gen) / (8760 * self.system_capacity) * 100
-        self.turb_powers = power_turbines * (100 - self._operational_losses) / 100 / 1000 # kW
-        self.turb_velocities = self.fi.turbine_average_velocities
-        self.annual_energy_pre_curtailment_ac = self.annual_energy
+
+            power_turbines = np.load(data_path / "power_turbines.npy")
+            power_farm = np.load(data_path / "power_farm.npy")
+            
+            self.gen = np.load(data_path / "gen.npy")
+            self.annual_energy = np.sum(self.gen)
+            self.capacity_factor = np.sum(self.gen) / (8760 * self.system_capacity) * 100
+            self.turb_powers = power_turbines * (100 - self._operational_losses) / 100 / 1000
+            self.turb_velocities = np.load(data_path / "turb_velocities.npy")
+            self.annual_energy_pre_curtailment_ac = self.annual_energy
+        
+
+
+        else:
+
+            print('Simulating wind farm output in FLORIS...')
+            self.fi.set(wind_data=time_series)
+            self.fi.run()
+
+            power_turbines[:, self.start_idx:self.end_idx] = self.fi.get_turbine_powers().reshape((self.nTurbs, self.end_idx - self.start_idx))
+            power_farm[self.start_idx:self.end_idx] = self.fi.get_farm_power().reshape((self.end_idx - self.start_idx))
+
+            # Adding losses from PySAM defaults (excluding turbine and wake losses)
+            self.gen = power_farm * ((100 - self._operational_losses)/100) / 1000 # kW
+
+            self.annual_energy = np.sum(self.gen) # kWh
+            self.capacity_factor = np.sum(self.gen) / (8760 * self.system_capacity) * 100
+            self.turb_powers = power_turbines * (100 - self._operational_losses) / 100 / 1000 # kW
+            self.turb_velocities = self.fi.turbine_average_velocities
+            self.annual_energy_pre_curtailment_ac = self.annual_energy
 
     def export(self):
         """

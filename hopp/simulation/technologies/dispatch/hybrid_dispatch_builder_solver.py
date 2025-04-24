@@ -456,8 +456,6 @@ class HybridDispatchBuilderSolver:
             for index in block_object.index_set():
                 block_object[index].display()
 
-
-    # ZCT - add option to replace simulate power with GH_dispatch here
             
     def simulate_power(self):
         if self.needs_dispatch:
@@ -655,7 +653,7 @@ class HybridDispatchBuilderSolver:
                 else:
 
                     # TODO: this is not a good way to do this... This won't work with CSP addition...
-                    self.battery_heuristic()
+                    self.battery_heuristic(start_time)
                     # TODO: we could just run the csp model without dispatch here
             else:
                 self.solve_dispatch_model(start_time, n_days)
@@ -685,7 +683,7 @@ class HybridDispatchBuilderSolver:
                     store_outputs=store_outputs,
                 )
 
-    def battery_heuristic(self):
+    def battery_heuristic(self, start_time):
         tot_gen = np.zeros(self.options.n_look_ahead_periods)
 
         for power_source in self.power_sources.keys():
@@ -722,6 +720,10 @@ class HybridDispatchBuilderSolver:
             ### Note: the inputs grid_limit and goal_power are in MW ###
             self.power_sources["battery"].dispatch.set_fixed_dispatch(
                 tot_gen, grid_limit, load_value
+            )
+        elif "externally_defined" in self.options.battery_dispatch:
+            self.power_sources["battery"].dispatch.set_fixed_dispatch(
+                tot_gen, grid_limit, start_time
             )
         else:
             self.power_sources["battery"].dispatch.set_fixed_dispatch(

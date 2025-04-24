@@ -23,5 +23,9 @@ from hopp.simulation.technologies.dispatch.power_storage.heuristic_load_followin
     HeuristicLoadFollowingDispatch,
 )
 from hopp.simulation.technologies.dispatch.power_storage.heuristic_load_following_dispatch_zct import (
-    HeuristicLoadFollowingDispatchZCT
+    HeuristicLoadFollowingDispatchZCT,
 )
+from hopp.simulation.technologies.dispatch.power_storage.externally_defined_battery_dispatch_heuristic import (
+    ExternallyDefinedBatteryDispatchHeuristic,
+)
+
