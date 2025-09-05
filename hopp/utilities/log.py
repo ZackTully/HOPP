@@ -19,7 +19,7 @@ console_level = logging.WARNING
 # set up logging to file - see previous section for more details
 formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
 if MPI:
-    print("logging to stdout")
+    # print("logging to stdout")
     logging.basicConfig(level=logging_level,
                         datefmt='%m-%d %H:%M',
                         stream=sys.stdout)
@@ -31,7 +31,7 @@ else:
     if not os.path.isdir(log_path):
         os.mkdir(log_path)
     log_path = log_path / ("hybrid_systems" + run_suffix + ".log")
-    print(log_path)
+    # print(log_path)
     # logging.basicConfig(level=logging_level,
     #                     datefmt='%m-%d %H:%M',
     #                     filename=str(log_path),

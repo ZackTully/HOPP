@@ -585,9 +585,9 @@ class CustomFinancialModel():
     def annual_energy_kwh(self) -> float:
         return self.value('annual_energy_pre_curtailment_ac')
     
-    @property
-    def om_total_expense(self) -> float:
-        return self.value('om_total_expense')
+    # @property
+    # def om_total_expense(self) -> float:
+    #     return self.value('om_total_expense')
     
     # for compatibility with calls to SingleOwner
     @property

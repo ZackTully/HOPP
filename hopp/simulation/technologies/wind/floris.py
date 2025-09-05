@@ -76,6 +76,7 @@ class Floris(BaseClass):
             rho = calculate_air_density(self.site.elev)
             floris_config["flow_field"].update({"air_density":rho})
         
+        self.annual_energy = None
         floris_config = self.initialize_from_floris(floris_config)
         
         self.fi = FlorisModel(floris_config)
@@ -132,7 +133,8 @@ class Floris(BaseClass):
         self.turb_rating = max(self.wind_turbine_powercurve_powerout)
         
         if self.config.turbine_rating_kw is not None:
-            if self.config.turbine_rating_kw != self.turb_rating:
+            # if self.config.turbine_rating_kw != self.turb_rating:
+            if not np.isclose(self.turb_rating, self.config.turbine_rating_kw):
                 msg = (
                     f"Input turbine rating ({self.config.turbine_rating_kw} kW) does not match "
                     f"rating from floris power-curve ({self.turb_rating} kW). "
@@ -253,8 +255,8 @@ class Floris(BaseClass):
         )
 
 
-        if False: 
-            # print("Loading FLORIS data Zack's sloppy speedup hack")
+        if True: 
+            print("Loading FLORIS data Zack's sloppy speedup hack")
             from pathlib import Path
 
             data_path = Path("/Users/ztully/Documents/hybrids_code/GH_scripts/greenheart_scripts/minnesota_reference_design/01-minnesota-steel/greenHEART/input-files/weather/floris_data")
@@ -278,23 +280,23 @@ class Floris(BaseClass):
             self.fi.set(wind_data=time_series)
             self.fi.run()
 
-        power_turbines[:, self.start_idx:self.end_idx] = self.fi.get_turbine_powers().reshape(
-            (self.nTurbs, self.end_idx - self.start_idx)
-        )
-        power_farm[self.start_idx:self.end_idx] = self.fi.get_farm_power().reshape(
-            (self.end_idx - self.start_idx)
-        )
+            power_turbines[:, self.start_idx:self.end_idx] = self.fi.get_turbine_powers().reshape(
+                (self.nTurbs, self.end_idx - self.start_idx)
+            )
+            power_farm[self.start_idx:self.end_idx] = self.fi.get_farm_power().reshape(
+                (self.end_idx - self.start_idx)
+            )
 
-        operational_efficiency = ((100 - self._operational_losses)/100)
-        # Adding losses from PySAM defaults (excluding turbine and wake losses)
-        self.gen = power_farm * operational_efficiency / 1000 # kW
+            operational_efficiency = ((100 - self._operational_losses)/100)
+            # Adding losses from PySAM defaults (excluding turbine and wake losses)
+            self.gen = power_farm * operational_efficiency / 1000 # kW
 
-        self.annual_energy = np.sum(self.gen) # kWh
-        self.capacity_factor = np.sum(self.gen) / (len(power_farm) * self.system_capacity) * 100
-        self.annual_energy_pre_curtailment_ac = np.sum(self.gen) # kWh
-        if self.config.store_turbine_performance_results:
-            self.turb_powers = power_turbines * operational_efficiency / 1000 # kW
-            self.turb_velocities = self.fi.turbine_average_velocities
+            self.annual_energy = np.sum(self.gen) # kWh
+            self.capacity_factor = np.sum(self.gen) / (len(power_farm) * self.system_capacity) * 100
+            self.annual_energy_pre_curtailment_ac = np.sum(self.gen) # kWh
+            if self.config.store_turbine_performance_results:
+                self.turb_powers = power_turbines * operational_efficiency / 1000 # kW
+                self.turb_velocities = self.fi.turbine_average_velocities
         
 
     def export(self):

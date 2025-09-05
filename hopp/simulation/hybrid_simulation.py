@@ -1265,3 +1265,7 @@ class HybridSimulation(BaseClass):
                     linewidth=4.0
                     ):
         return self.layout.plot(figure, axes, wind_color, pv_color, site_border_color, site_alpha, linewidth)
+
+
+    def __repr__(self):
+        return "hybrid simulation standin __repr__"
