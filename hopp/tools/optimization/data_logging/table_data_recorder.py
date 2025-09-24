@@ -1,8 +1,8 @@
 import os
 from collections import OrderedDict
 
-from .a_data_recorder import ADataRecorder
-from .JSON_lines_record_logger import JSONLinesRecordLogger, RecordLogger
+from hopp.tools.optimization.data_logging.a_data_recorder import ADataRecorder
+from hopp.tools.optimization.data_logging.JSON_lines_record_logger import JSONLinesRecordLogger, RecordLogger
 
 
 class TableDataRecorder(ADataRecorder):

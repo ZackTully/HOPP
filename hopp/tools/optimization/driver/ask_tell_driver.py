@@ -5,8 +5,8 @@ from typing import (
     Tuple,
     )
 
-from ..data_logging.data_recorder import DataRecorder
-from ..optimizer.ask_tell_optimizer import AskTellOptimizer
+from hopp.tools.optimization.data_logging.data_recorder import DataRecorder
+from hopp.tools.optimization.optimizer.ask_tell_optimizer import AskTellOptimizer
 
 
 class AskTellDriver:

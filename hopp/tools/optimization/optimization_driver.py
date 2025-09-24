@@ -4,22 +4,22 @@ from typing import (
     Tuple
 )
 
-from .data_logging.data_recorder import DataRecorder
-from .data_logging.null_data_recorder import NullDataRecorder
+from hopp.tools.optimization.data_logging.data_recorder import DataRecorder
+from hopp.tools.optimization.data_logging.null_data_recorder import NullDataRecorder
 
-from .optimization_problem import OptimizationProblem
-from .driver.ask_tell_parallel_driver import AskTellDriver, AskTellParallelDriver
-from .driver.ask_tell_serial_driver import AskTellSerialDriver
-from .optimizer.CEM_optimizer import CEMOptimizer
-from .optimizer.CMA_ES_optimizer import CMAESOptimizer
-from .optimizer.GA_optimizer import GAOptimizer
-from .optimizer.SPSA_optimizer import (
+from hopp.tools.optimization.optimization_problem import OptimizationProblem
+from hopp.tools.optimization.driver.ask_tell_parallel_driver import AskTellDriver, AskTellParallelDriver
+from hopp.tools.optimization.driver.ask_tell_serial_driver import AskTellSerialDriver
+from hopp.tools.optimization.optimizer.CEM_optimizer import CEMOptimizer
+from hopp.tools.optimization.optimizer.CMA_ES_optimizer import CMAESOptimizer
+from hopp.tools.optimization.optimizer.GA_optimizer import GAOptimizer
+from hopp.tools.optimization.optimizer.SPSA_optimizer import (
     SPSADimensionInfo,
     SPSAOptimizer,
 )
-from .optimizer.ask_tell_optimizer import AskTellOptimizer
-from .optimizer.dimension.gaussian_dimension import Gaussian
-from .optimizer.stationary_optimizer import StationaryOptimizer
+from hopp.tools.optimization.optimizer.ask_tell_optimizer import AskTellOptimizer
+from hopp.tools.optimization.optimizer.dimension.gaussian_dimension import Gaussian
+from hopp.tools.optimization.optimizer.stationary_optimizer import StationaryOptimizer
 
 
 class ConvertingOptimizationDriver:

@@ -4,7 +4,7 @@ import math
 from hopp.utilities.log import bos_logger as logger
 from hybridbosse.hybridbosse_api.run_hybridbosse import run as run_hybridbosse
 
-from .bos_model import BOSCalculator
+from hopp.tools.analysis.bos.bos_model import BOSCalculator
 
 
 class HybridBOSSE(BOSCalculator):

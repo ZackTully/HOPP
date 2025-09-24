@@ -3,8 +3,8 @@ from typing import (
     TypeVar,
     )
 
-from ..data_logging.data_recorder import DataRecorder
-from .candidate_converter import CandidateConverter
+from hopp.tools.optimization.data_logging.data_recorder import DataRecorder
+from hopp.tools.optimization.candidate_converter.candidate_converter import CandidateConverter
 
 To = TypeVar('To')
 

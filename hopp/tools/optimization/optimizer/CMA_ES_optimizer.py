@@ -9,9 +9,9 @@ from typing import (
 import numpy as np
 import scipy
 
-from ..data_logging.data_recorder import DataRecorder
-from .ask_tell_optimizer import AskTellOptimizer
-from .dimension.gaussian_dimension import DimensionInfo, Gaussian
+from hopp.tools.optimization.data_logging.data_recorder import DataRecorder
+from hopp.tools.optimization.optimizer.ask_tell_optimizer import AskTellOptimizer
+from hopp.tools.optimization.optimizer.dimension.gaussian_dimension import DimensionInfo, Gaussian
 
 
 # sys.path.append('../examples/flatirons')

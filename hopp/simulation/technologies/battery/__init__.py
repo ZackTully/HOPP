@@ -1,2 +1,2 @@
-from .battery import Battery, BatteryConfig, BatteryOutputs
-from .battery_stateless import BatteryStateless, BatteryStatelessConfig
+from hopp.simulation.technologies.battery.battery import Battery, BatteryConfig, BatteryOutputs
+from hopp.simulation.technologies.battery.battery_stateless import BatteryStateless, BatteryStatelessConfig

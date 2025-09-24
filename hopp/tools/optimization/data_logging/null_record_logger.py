@@ -1,4 +1,4 @@
-from .record_logger import RecordLogger
+from hopp.tools.optimization.data_logging.record_logger import RecordLogger
 
 
 class NullRecordLogger(RecordLogger):

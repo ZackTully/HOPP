@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-from .bos_model import BOSCalculator
+from hopp.tools.analysis.bos.bos_model import BOSCalculator
 from hopp.utilities.log import bos_logger as logger
 
 file_path = Path(__file__).parent

@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from . import config_tools
+from hopp.tools.optimization.command_line_tools import config_tools
 
 
 def makedir_if_not_exists(filename: str) -> None:

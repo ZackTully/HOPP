@@ -1,6 +1,6 @@
 import numpy as np
 
-from .locations import locations
+from hopp.simulation.technologies.sites.locations import locations
 
 
 # case 2

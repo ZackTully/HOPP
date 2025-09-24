@@ -1,9 +1,9 @@
 import os
 
-from .JSON_lines_record_logger import JSONLinesRecordLogger
-from .a_data_recorder import ADataRecorder
-from .null_record_logger import NullRecordLogger
-from .record_logger import RecordLogger
+from hopp.tools.optimization.data_logging.JSON_lines_record_logger import JSONLinesRecordLogger
+from hopp.tools.optimization.data_logging.a_data_recorder import ADataRecorder
+from hopp.tools.optimization.data_logging.null_record_logger import NullRecordLogger
+from hopp.tools.optimization.data_logging.record_logger import RecordLogger
 
 
 class DataRecorder(ADataRecorder):

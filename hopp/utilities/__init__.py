@@ -1,1 +1,1 @@
-from .utilities import load_yaml
+from hopp.utilities.utilities import load_yaml

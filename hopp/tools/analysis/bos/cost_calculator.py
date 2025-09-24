@@ -1,5 +1,5 @@
-from .bos_model import BOSCostPerMW, BOSCalculator
-from .bos_lookup import BOSLookup
+from hopp.tools.analysis.bos.bos_model import BOSCostPerMW, BOSCalculator
+from hopp.tools.analysis.bos.bos_lookup import BOSLookup
 # from .hybrid_bosse import HybridBOSSE
 from hopp.utilities.log import bos_logger as logger
 import numpy as np
@@ -175,7 +175,7 @@ def create_cost_calculator(interconnection_mw: float,
         cost_reductions['solar_bos_reduction_hybrid'] = 0.1
 
     if atb_costs:
-        from .atb_lookup import ATBLookup
+        from hopp.tools.analysis.bos.atb_lookup import ATBLookup
         atblookup = ATBLookup()
         wind_installed_cost_mw, solar_installed_cost_mw, storage_installed_cost_mw, storage_installed_cost_mwh = \
             atblookup.calculate_atb_costs(atb_year, atb_scenario)

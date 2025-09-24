@@ -13,10 +13,10 @@ import numpy as np
 
 # sys.path.append('../examples/flatirons')
 # import func_tools
-from ..data_logging.data_recorder import DataRecorder
-from .ask_tell_optimizer import AskTellOptimizer
+from hopp.tools.optimization.data_logging.data_recorder import DataRecorder
+from hopp.tools.optimization.optimizer.ask_tell_optimizer import AskTellOptimizer
 # import shapely
-from .dimension.dimension_info import DimensionInfo
+from hopp.tools.optimization.optimizer.dimension.dimension_info import DimensionInfo
 
 
 class GAOptimizer(AskTellOptimizer, ABC):

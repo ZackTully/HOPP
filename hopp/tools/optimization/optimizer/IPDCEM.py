@@ -7,7 +7,7 @@ from typing import (
 import numpy as np
 
 # import shapely
-from .DCEM_optimizer import DCEMOptimizer
+from hopp.tools.optimization.optimizer.DCEM_optimizer import DCEMOptimizer
 
 
 # sys.path.append('../examples/flatirons')

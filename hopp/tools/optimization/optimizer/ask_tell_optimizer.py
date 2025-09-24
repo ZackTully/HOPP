@@ -4,7 +4,7 @@ from typing import (
     Tuple,
     )
 
-from ..data_logging.data_recorder import DataRecorder
+from hopp.tools.optimization.data_logging.data_recorder import DataRecorder
 
 
 class AskTellOptimizer:
